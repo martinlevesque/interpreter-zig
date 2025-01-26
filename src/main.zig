@@ -1,4 +1,5 @@
 const std = @import("std");
+const tokenize = @import("tokenize.zig");
 
 pub fn main() !void {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -24,7 +25,15 @@ pub fn main() !void {
     defer std.heap.page_allocator.free(file_contents);
 
     if (file_contents.len > 0) {
-        @panic("Scanner not implemented");
+        const tokens = tokenize.tokenize(file_contents);
+
+        for (tokens.items) |token| {
+            if (token.char == 0) {
+                std.debug.print("{s}  null\n", .{token.identifier});
+            } else {
+                std.debug.print("{s} {c} null\n", .{ token.identifier, token.char });
+            }
+        }
     } else {
         try std.io.getStdOut().writer().print("EOF  null\n", .{}); // Placeholder, remove this line when implementing the scanner
     }
