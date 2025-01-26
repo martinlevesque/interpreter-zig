@@ -2,9 +2,6 @@ const std = @import("std");
 const tokenize = @import("tokenize.zig");
 
 pub fn main() !void {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    std.debug.print("Logs from your program will appear here!\n", .{});
-
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer std.process.argsFree(std.heap.page_allocator, args);
 
