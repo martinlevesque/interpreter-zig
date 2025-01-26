@@ -26,6 +26,7 @@ pub fn main() !void {
 
     if (file_contents.len > 0) {
         const tokens = tokenize.tokenize(file_contents);
+        defer tokens.deinit();
 
         for (tokens.items) |token| {
             if (token.char == 0) {
