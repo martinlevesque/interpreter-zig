@@ -2,6 +2,7 @@ const std = @import("std");
 const tokenize = @import("tokenize.zig");
 
 pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer std.process.argsFree(std.heap.page_allocator, args);
 
@@ -26,9 +27,9 @@ pub fn main() !void {
 
         for (tokens.items) |token| {
             if (token.char == 0) {
-                std.debug.print("{s}  null\n", .{token.identifier});
+                try stdout.print("{s}  null\n", .{token.identifier});
             } else {
-                std.debug.print("{s} {c} null\n", .{ token.identifier, token.char });
+                try stdout.print("{s} {c} null\n", .{ token.identifier, token.char });
             }
         }
     } else {
