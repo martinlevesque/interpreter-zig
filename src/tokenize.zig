@@ -16,6 +16,12 @@ pub fn tokenize(input: []const u8) std.ArrayList(Token) {
             ')' => {
                 tokens.append(Token{ .identifier = "RIGHT_PAREN", .char = char }) catch unreachable;
             },
+            '{' => {
+                tokens.append(Token{ .identifier = "LEFT_BRACE", .char = char }) catch unreachable;
+            },
+            '}' => {
+                tokens.append(Token{ .identifier = "RIGHT_BRACE", .char = char }) catch unreachable;
+            },
             else => {},
         }
     }
