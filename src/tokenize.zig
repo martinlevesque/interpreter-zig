@@ -19,8 +19,23 @@ pub fn tokenize(input: []const u8) std.ArrayList(Token) {
             '{' => {
                 tokens.append(Token{ .identifier = "LEFT_BRACE", .char = char }) catch unreachable;
             },
-            '}' => {
-                tokens.append(Token{ .identifier = "RIGHT_BRACE", .char = char }) catch unreachable;
+            ',' => {
+                tokens.append(Token{ .identifier = "COMMA", .char = char }) catch unreachable;
+            },
+            '.' => {
+                tokens.append(Token{ .identifier = "DOT", .char = char }) catch unreachable;
+            },
+            '-' => {
+                tokens.append(Token{ .identifier = "MINUS", .char = char }) catch unreachable;
+            },
+            '+' => {
+                tokens.append(Token{ .identifier = "PLUS", .char = char }) catch unreachable;
+            },
+            ';' => {
+                tokens.append(Token{ .identifier = "SEMICOLON", .char = char }) catch unreachable;
+            },
+            '*' => {
+                tokens.append(Token{ .identifier = "STAR", .char = char }) catch unreachable;
             },
             else => {},
         }
