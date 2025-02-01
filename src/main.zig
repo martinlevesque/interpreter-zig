@@ -5,6 +5,7 @@ pub fn main() !void {
     std.debug.print("Starting interpreter\n", .{});
 
     const stdout = std.io.getStdOut().writer();
+    const stderr = std.io.getStdErr().writer();
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer std.process.argsFree(std.heap.page_allocator, args);
 
@@ -28,12 +29,21 @@ pub fn main() !void {
         const tokens = tokenize.tokenize(file_contents);
         defer tokens.deinit();
 
+        var containsError = false;
+
         for (tokens.items) |token| {
             if (token.char == 0) {
                 try stdout.print("{s}  null\n", .{token.identifier});
+            } else if (token.err != null) {
+                try stderr.print("[line {}] Error: Unexpected character: {c}\n", .{ token.lineNumber, token.char });
+                containsError = true;
             } else {
                 try stdout.print("{s} {c} null\n", .{ token.identifier, token.char });
             }
+        }
+
+        if (containsError) {
+            std.process.exit(65);
         }
     } else {
         try std.io.getStdOut().writer().print("EOF  null\n", .{}); // Placeholder, remove this line when implementing the scanner
