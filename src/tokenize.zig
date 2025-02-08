@@ -5,11 +5,12 @@ const TokenizeError = error{LexicalError};
 const Token = struct {
     identifier: []const u8,
     lexeme: []const u8,
+    inputChar: u8 = 0,
     lineNumber: u32 = 0,
     err: ?TokenizeError = null,
 };
 
-fn tokenAt(input: []const u8, index: usize, line: *u32) ?Token {
+fn tokenAt(input: []const u8, index: usize, line: *u32) !?Token {
     if (index >= input.len) {
         return null;
     }
@@ -54,14 +55,14 @@ fn tokenAt(input: []const u8, index: usize, line: *u32) ?Token {
             line.* = line.* + 1;
         },
         else => {
-            return Token{ .identifier = "", .lexeme = "", .lineNumber = line.*, .err = TokenizeError.LexicalError };
+            return Token{ .identifier = "", .lexeme = "", .inputChar = char, .lineNumber = line.*, .err = TokenizeError.LexicalError };
         },
     }
 
     return null;
 }
 
-pub fn tokenize(input: []const u8) std.ArrayList(Token) {
+pub fn tokenize(input: []const u8) !std.ArrayList(Token) {
     var tokens = std.ArrayList(Token).init(std.heap.page_allocator);
     var line: u32 = 1;
     var skipNext = false;
@@ -72,8 +73,8 @@ pub fn tokenize(input: []const u8) std.ArrayList(Token) {
             continue;
         }
 
-        const currentToken = tokenAt(input, i, &line);
-        const nextToken = tokenAt(input, i + 1, &line);
+        const currentToken = try tokenAt(input, i, &line);
+        const nextToken = try tokenAt(input, i + 1, &line);
 
         if (currentToken) |token| {
             if (nextToken) |givenNextToken| {

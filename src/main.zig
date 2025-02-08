@@ -26,7 +26,7 @@ pub fn main() !void {
     defer std.heap.page_allocator.free(file_contents);
 
     if (file_contents.len > 0) {
-        const tokens = tokenize.tokenize(file_contents);
+        const tokens = try tokenize.tokenize(file_contents);
         defer tokens.deinit();
 
         var containsError = false;
@@ -35,7 +35,7 @@ pub fn main() !void {
             if (std.mem.eql(u8, token.identifier, "EOF")) {
                 try stdout.print("{s}  null\n", .{token.identifier});
             } else if (token.err != null) {
-                try stderr.print("[line {}] Error: Unexpected character: {s}\n", .{ token.lineNumber, token.lexeme });
+                try stderr.print("[line {}] Error: Unexpected character: {c}\n", .{ token.lineNumber, token.inputChar });
                 containsError = true;
             } else {
                 try stdout.print("{s} {s} null\n", .{ token.identifier, token.lexeme });
