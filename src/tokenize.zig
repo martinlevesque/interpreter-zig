@@ -4,7 +4,7 @@ const TokenizeError = error{LexicalError};
 
 const Token = struct {
     identifier: []const u8,
-    char: u8,
+    lexeme: []const u8,
     lineNumber: u32 = 0,
     err: ?TokenizeError = null,
 };
@@ -18,43 +18,43 @@ fn tokenAt(input: []const u8, index: usize, line: *u32) ?Token {
 
     switch (char) {
         '(' => {
-            return Token{ .identifier = "LEFT_PAREN", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "LEFT_PAREN", .lexeme = "(", .lineNumber = line.* };
         },
         ')' => {
-            return Token{ .identifier = "RIGHT_PAREN", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "RIGHT_PAREN", .lexeme = ")", .lineNumber = line.* };
         },
         '{' => {
-            return Token{ .identifier = "LEFT_BRACE", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "LEFT_BRACE", .lexeme = "{", .lineNumber = line.* };
         },
         '}' => {
-            return Token{ .identifier = "RIGHT_BRACE", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "RIGHT_BRACE", .lexeme = "}", .lineNumber = line.* };
         },
         ',' => {
-            return Token{ .identifier = "COMMA", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "COMMA", .lexeme = ",", .lineNumber = line.* };
         },
         '.' => {
-            return Token{ .identifier = "DOT", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "DOT", .lexeme = ".", .lineNumber = line.* };
         },
         '-' => {
-            return Token{ .identifier = "MINUS", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "MINUS", .lexeme = "-", .lineNumber = line.* };
         },
         '+' => {
-            return Token{ .identifier = "PLUS", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "PLUS", .lexeme = "+", .lineNumber = line.* };
         },
         ';' => {
-            return Token{ .identifier = "SEMICOLON", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "SEMICOLON", .lexeme = ";", .lineNumber = line.* };
         },
         '*' => {
-            return Token{ .identifier = "STAR", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "STAR", .lexeme = "*", .lineNumber = line.* };
         },
         '=' => {
-            return Token{ .identifier = "EQUAL", .char = char, .lineNumber = line.* };
+            return Token{ .identifier = "EQUAL", .lexeme = "=", .lineNumber = line.* };
         },
         '\n' => {
             line.* = line.* + 1;
         },
         else => {
-            return Token{ .identifier = "", .char = char, .lineNumber = line.*, .err = TokenizeError.LexicalError };
+            return Token{ .identifier = "", .lexeme = "", .lineNumber = line.*, .err = TokenizeError.LexicalError };
         },
     }
 
@@ -66,7 +66,7 @@ pub fn tokenize(input: []const u8) std.ArrayList(Token) {
     var line: u32 = 1;
     var skipNext = false;
 
-    for (input, 0..) |char, i| {
+    for (input, 0..) |_, i| {
         if (skipNext) {
             skipNext = false;
             continue;
@@ -78,7 +78,7 @@ pub fn tokenize(input: []const u8) std.ArrayList(Token) {
         if (currentToken) |token| {
             if (nextToken) |givenNextToken| {
                 if (std.mem.eql(u8, givenNextToken.identifier, "EQUAL") and std.mem.eql(u8, token.identifier, "EQUAL")) {
-                    tokens.append(Token{ .identifier = "EQUAL_EQUAL", .char = char, .lineNumber = line }) catch unreachable;
+                    tokens.append(Token{ .identifier = "EQUAL_EQUAL", .lexeme = "==", .lineNumber = line }) catch unreachable;
 
                     skipNext = true;
                     continue;
@@ -89,7 +89,7 @@ pub fn tokenize(input: []const u8) std.ArrayList(Token) {
         }
     }
 
-    tokens.append(Token{ .identifier = "EOF", .char = 0 }) catch unreachable;
+    tokens.append(Token{ .identifier = "EOF", .lexeme = "EOF" }) catch unreachable;
 
     return tokens;
 }
