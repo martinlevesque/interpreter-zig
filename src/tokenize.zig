@@ -10,6 +10,8 @@ const Token = struct {
     err: ?TokenizeError = null,
 };
 
+const LexemeSetup = struct { currentIdentifier: []const u8, nextIdentifier: []const u8, thenIdentifier: []const u8, thenLexeme: []const u8 };
+
 fn tokenAt(input: []const u8, index: usize, line: *u32) !?Token {
     if (index >= input.len) {
         return null;
@@ -51,6 +53,9 @@ fn tokenAt(input: []const u8, index: usize, line: *u32) !?Token {
         '=' => {
             return Token{ .identifier = "EQUAL", .lexeme = "=", .lineNumber = line.* };
         },
+        '!' => {
+            return Token{ .identifier = "BANG", .lexeme = "!", .lineNumber = line.* };
+        },
         '\n' => {
             line.* = line.* + 1;
         },
@@ -62,10 +67,21 @@ fn tokenAt(input: []const u8, index: usize, line: *u32) !?Token {
     return null;
 }
 
+fn setupMultiTokensLexemes() !std.ArrayList(LexemeSetup) {
+    var lexemes = std.ArrayList(LexemeSetup).init(std.heap.page_allocator);
+
+    try lexemes.append(LexemeSetup{ .currentIdentifier = "EQUAL", .nextIdentifier = "EQUAL", .thenIdentifier = "EQUAL_EQUAL", .thenLexeme = "==" });
+    try lexemes.append(LexemeSetup{ .currentIdentifier = "BANG", .nextIdentifier = "EQUAL", .thenIdentifier = "BANG_EQUAL", .thenLexeme = "!=" });
+
+    return lexemes;
+}
+
 pub fn tokenize(input: []const u8) !std.ArrayList(Token) {
     var tokens = std.ArrayList(Token).init(std.heap.page_allocator);
     var line: u32 = 1;
     var skipNext = false;
+    const setupLexemes: std.ArrayList(LexemeSetup) = try setupMultiTokensLexemes();
+    defer setupLexemes.deinit();
 
     for (input, 0..) |_, i| {
         if (skipNext) {
@@ -78,19 +94,29 @@ pub fn tokenize(input: []const u8) !std.ArrayList(Token) {
 
         if (currentToken) |token| {
             if (nextToken) |givenNextToken| {
-                if (std.mem.eql(u8, givenNextToken.identifier, "EQUAL") and std.mem.eql(u8, token.identifier, "EQUAL")) {
-                    tokens.append(Token{ .identifier = "EQUAL_EQUAL", .lexeme = "==", .lineNumber = line }) catch unreachable;
+                var foundSetupLexeme = false;
 
+                for (setupLexemes.items) |lexeme| {
+                    if (std.mem.eql(u8, givenNextToken.identifier, lexeme.nextIdentifier) and std.mem.eql(u8, token.identifier, lexeme.currentIdentifier)) {
+                        try tokens.append(Token{ .identifier = lexeme.thenIdentifier, .lexeme = lexeme.thenLexeme, .lineNumber = line });
+
+                        foundSetupLexeme = true;
+                        break;
+                    }
+                }
+
+                if (foundSetupLexeme) {
+                    // we found a multi tokens lexeme valid
                     skipNext = true;
                     continue;
                 }
             }
 
-            tokens.append(token) catch unreachable;
+            try tokens.append(token);
         }
     }
 
-    tokens.append(Token{ .identifier = "EOF", .lexeme = "EOF" }) catch unreachable;
+    try tokens.append(Token{ .identifier = "EOF", .lexeme = "EOF" });
 
     return tokens;
 }
