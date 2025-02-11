@@ -32,6 +32,12 @@ fn tokenAt(input: []const u8, index: usize, line: *u32) !?Token {
         '}' => {
             return Token{ .identifier = "RIGHT_BRACE", .lexeme = "}", .lineNumber = line.* };
         },
+        '<' => {
+            return Token{ .identifier = "LESS", .lexeme = "<", .lineNumber = line.* };
+        },
+        '>' => {
+            return Token{ .identifier = "GREATER", .lexeme = ">", .lineNumber = line.* };
+        },
         ',' => {
             return Token{ .identifier = "COMMA", .lexeme = ",", .lineNumber = line.* };
         },
@@ -72,6 +78,8 @@ fn setupMultiTokensLexemes() !std.ArrayList(LexemeSetup) {
 
     try lexemes.append(LexemeSetup{ .currentIdentifier = "EQUAL", .nextIdentifier = "EQUAL", .thenIdentifier = "EQUAL_EQUAL", .thenLexeme = "==" });
     try lexemes.append(LexemeSetup{ .currentIdentifier = "BANG", .nextIdentifier = "EQUAL", .thenIdentifier = "BANG_EQUAL", .thenLexeme = "!=" });
+    try lexemes.append(LexemeSetup{ .currentIdentifier = "LESS", .nextIdentifier = "EQUAL", .thenIdentifier = "LESS_EQUAL", .thenLexeme = "<=" });
+    try lexemes.append(LexemeSetup{ .currentIdentifier = "GREATER", .nextIdentifier = "EQUAL", .thenIdentifier = "GREATER_EQUAL", .thenLexeme = ">=" });
 
     return lexemes;
 }
