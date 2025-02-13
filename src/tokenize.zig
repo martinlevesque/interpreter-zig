@@ -15,8 +15,9 @@ const LexemeSetup = struct {
     nextIdentifier: []const u8,
     thenIdentifier: []const u8,
     thenLexeme: []const u8,
-    skipUpTo: u8,
+    skipUpTo: u8 = 0,
     includeToken: bool = true,
+    skipOnCurrent: bool = false,
 };
 
 fn tokenAt(input: []const u8, index: usize, line: u32) !?Token {
@@ -72,6 +73,12 @@ fn tokenAt(input: []const u8, index: usize, line: u32) !?Token {
         '!' => {
             return Token{ .identifier = "BANG", .lexeme = "!", .lineNumber = line };
         },
+        ' ' => {
+            return Token{ .identifier = "<|SPACE|>", .lexeme = " ", .lineNumber = line };
+        },
+        '\t' => {
+            return Token{ .identifier = "<|TAB|>", .lexeme = "\t", .lineNumber = line };
+        },
         '\n' => {},
         else => {
             return Token{ .identifier = "", .lexeme = "", .inputChar = char, .lineNumber = line, .err = TokenizeError.LexicalError };
@@ -120,6 +127,22 @@ fn setupMultiTokensLexemes() !std.ArrayList(LexemeSetup) {
         .skipUpTo = '\n',
         .includeToken = false,
     });
+    try lexemes.append(LexemeSetup{
+        .currentIdentifier = "<|SPACE|>",
+        .nextIdentifier = "",
+        .thenIdentifier = "",
+        .thenLexeme = "",
+        .includeToken = false,
+        .skipOnCurrent = true,
+    });
+    try lexemes.append(LexemeSetup{
+        .currentIdentifier = "<|TAB|>",
+        .nextIdentifier = "",
+        .thenIdentifier = "",
+        .thenLexeme = "",
+        .includeToken = false,
+        .skipOnCurrent = true,
+    });
 
     return lexemes;
 }
@@ -149,6 +172,16 @@ pub fn tokenize(input: []const u8) !std.ArrayList(Token) {
         const nextToken = try tokenAt(input, i + 1, line);
 
         if (currentToken) |token| {
+            var shouldAddToken = true;
+
+            for (setupLexemes.items) |lexeme| {
+                if (std.mem.eql(u8, token.identifier, lexeme.currentIdentifier) and lexeme.skipOnCurrent) {
+                    // if it's this given identifier, skip
+                    shouldAddToken = false;
+                    break;
+                }
+            }
+
             if (nextToken) |givenNextToken| {
                 var foundSetupLexeme = false;
 
@@ -170,7 +203,9 @@ pub fn tokenize(input: []const u8) !std.ArrayList(Token) {
                 }
             }
 
-            try tokens.append(token);
+            if (shouldAddToken) {
+                try tokens.append(token);
+            }
         }
     }
 
