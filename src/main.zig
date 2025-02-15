@@ -32,13 +32,13 @@ pub fn main() !void {
         var containsError = false;
 
         for (tokens.items) |token| {
-            if (std.mem.eql(u8, token.identifier, "EOF")) {
-                try stdout.print("{s}  null\n", .{token.identifier});
+            if (token.type == tokenize.TokenType.EOF) {
+                try stdout.print("{s}  null\n", .{@tagName(token.type)});
             } else if (token.err != null) {
                 try stderr.print("[line {}] Error: Unexpected character: {c}\n", .{ token.lineNumber, token.inputChar });
                 containsError = true;
             } else {
-                try stdout.print("{s} {s} null\n", .{ token.identifier, token.lexeme });
+                try stdout.print("{s} {s} null\n", .{ @tagName(token.type), token.lexeme });
             }
         }
 
