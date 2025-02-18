@@ -39,6 +39,11 @@ const Token = struct {
     err: ?TokenizeError = null,
 };
 
+const AdvanceResult = struct {
+    position: usize,
+    result: ?Token,
+};
+
 const LexemeSetup = struct {
     currentType: TokenType,
     nextType: TokenType,
@@ -47,7 +52,7 @@ const LexemeSetup = struct {
     skipUpTo: u8 = 0,
     includeToken: bool = true,
     skipOnCurrent: bool = false,
-    advance: *const fn ([]const u8, usize) ?struct { usize, ?Token },
+    advance: *const fn ([]const u8, usize) ?AdvanceResult,
 };
 
 fn tokenAt(input: []const u8, index: usize, line: u32) !?Token {
