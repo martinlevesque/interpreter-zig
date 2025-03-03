@@ -35,13 +35,13 @@ const Token = struct {
     lexeme: []const u8,
     literalStr: []const u8 = "",
     inputChar: u8 = 0,
-    lineNumber: u32 = 0,
+    lineNumber: usize = 0,
     err: ?TokenizeError = null,
 };
 
 const AdvanceResult = struct {
     position: usize,
-    result: ?Token,
+    result: Token,
 };
 
 const LexemeSetup = struct {
@@ -52,7 +52,7 @@ const LexemeSetup = struct {
     skipUpTo: u8 = 0,
     includeToken: bool = true,
     skipOnCurrent: bool = false,
-    advance: *const fn ([]const u8, usize) ?AdvanceResult,
+    advance: *const fn (usize, []const u8, usize) ?AdvanceResult,
 };
 
 fn tokenAt(input: []const u8, index: usize, line: u32) !?Token {
@@ -142,15 +142,17 @@ fn structCharAt(char: u8) type {
 
 fn structAdvanceFindNext(token: Token, char: u8) type {
     return struct {
-        fn f(line: usize, input: []const u8, i: usize) ?Token {
+        fn f(line: usize, input: []const u8, i: usize) ?AdvanceResult {
             for (i..input.len) |idx| {
                 if (input[idx] == char) {
-                    return Token{
+                    const result = Token{
                         .type = token.type,
                         .lexeme = token.lexeme,
                         .inputChar = token.inputChar,
                         .lineNumber = line,
                     };
+
+                    return AdvanceResult{ .position = idx, .result = result };
                 }
             }
             return null;
@@ -161,13 +163,18 @@ fn structAdvanceFindNext(token: Token, char: u8) type {
 
 fn structAdvanceOne(token: Token, char: u8) type {
     return struct {
-        fn f(line: usize, _: []const u8, i: usize) ?Token { // todo ret pair
-            return Token{
-                .type = token.type,
-                .lexeme = token.lexeme,
-                .inputChar = token.inputChar,
-                .lineNumber = line,
-            };
+        fn f(line: usize, input: []const u8, i: usize) ?Token { // todo ret pair
+            if (input[i] == char) {
+                // todo remplace ad result
+                return Token{
+                    .type = token.type,
+                    .lexeme = token.lexeme,
+                    .inputChar = token.inputChar,
+                    .lineNumber = line,
+                };
+            }
+
+            return null;
         }
         const ptr = f;
     };
@@ -220,7 +227,7 @@ fn setupMultiTokensLexemes() !std.ArrayList(LexemeSetup) {
         .thenLexeme = "",
         .includeToken = false,
         .skipOnCurrent = true,
-        .advance = structAdvanceOne(Token{ .type = TokenType.NONE, .inputChar = ' ', .lexeme = "" }, ' ').ptr,
+        .advance = structAdvanceOne(Token{ .type = TokenType.NONE, .inputChar = ' ', .lexeme = "" }, 0).ptr,
     });
 
     try lexemes.append(LexemeSetup{
@@ -274,6 +281,12 @@ pub fn tokenize(input: []const u8) !std.ArrayList(Token) {
                         }
 
                         foundSetupLexeme = true;
+                        const advanceResult = lexeme.advance(input, i);
+
+                        if (advanceResult) |result| {
+                            std.debug("post = ", .{result.position});
+                        }
+
                         skipUpTo = lexeme.skipUpTo;
                         break;
                     }
